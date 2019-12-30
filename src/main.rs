@@ -1,16 +1,15 @@
+use crossterm::{
+    cursor::{Hide, MoveToColumn, Show},
+    event, queue,
+    style::Print,
+    terminal::{Clear, ClearType},
+};
 use std::{
-    io::{Write, self},
+    io::{self, Write},
     iter,
+    ops::FnMut,
     thread,
     time::Duration,
-    ops::FnMut,
-};
-use crossterm::{
-    queue,
-    terminal::{Clear, ClearType},
-    cursor::{MoveToColumn, Hide, Show},
-    style::Print,
-    event,
 };
 
 fn main() {
@@ -41,7 +40,9 @@ fn poll_event() -> Option<event::Event> {
 }
 
 pub struct BarBuilder<F>
-    where F: FnMut(u64, u64) -> String {
+where
+    F: FnMut(u64, u64) -> String,
+{
     total: Option<u64>,
     width: Option<u64>,
     max_width: Option<u64>,
@@ -50,7 +51,9 @@ pub struct BarBuilder<F>
 }
 
 impl<F> BarBuilder<F>
-where F: FnMut(u64, u64) -> String {
+where
+    F: FnMut(u64, u64) -> String,
+{
     pub fn new() -> Self {
         BarBuilder {
             total: None,
@@ -84,7 +87,9 @@ where F: FnMut(u64, u64) -> String {
             total: self.total.expect("`total` field not specified"),
             width: self.width.expect("`width` field not specified"),
             max_width: self.max_width.expect("`max_width` field not specified"),
-            status_width: self.status_width.expect("`status_width` field not specified"),
+            status_width: self
+                .status_width
+                .expect("`status_width` field not specified"),
             status_fmt: self.status_fmt.expect("`status_fmt` field not specified"),
             count: 0,
             new_width: None,
@@ -94,9 +99,10 @@ where F: FnMut(u64, u64) -> String {
 }
 
 pub struct Bar<'a, W, F>
-    where
-        W: Write,
-        F: FnMut(u64, u64) -> String {
+where
+    W: Write,
+    F: FnMut(u64, u64) -> String,
+{
     total: u64,
     width: u64,
     max_width: u64,
@@ -108,16 +114,14 @@ pub struct Bar<'a, W, F>
 }
 
 impl<'a, W, F> Bar<'a, W, F>
-    where
-        W: Write,
-        F: FnMut(u64, u64) -> String {
+where
+    W: Write,
+    F: FnMut(u64, u64) -> String,
+{
     pub fn update(&mut self, count: u64) {
         if let Some(width) = self.new_width.take() {
             if width < self.width() {
-                queue!(
-                    self.target,
-                    Print("\n".to_owned()),
-                ).unwrap();
+                queue!(self.target, Print("\n".to_owned()),).unwrap();
             }
             self.width = width;
         }
@@ -128,7 +132,8 @@ impl<'a, W, F> Bar<'a, W, F>
             MoveToColumn(1),
             Clear(ClearType::CurrentLine),
             Print(bar),
-        ).unwrap();
+        )
+        .unwrap();
         self.target.flush().unwrap();
     }
 
