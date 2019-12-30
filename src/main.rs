@@ -17,16 +17,16 @@ fn main() {
     println!("terminal: {} columns, {} rows", columns, rows);
     let mut stdout = io::stdout();
     crossterm::execute!(stdout, Hide).unwrap();
-    let mut bar = BarBuilder::new()
+    let mut progress_bar = BarBuilder::new()
         .total(50)
         .width(columns.into(), 80)
         .status(4, |count, total| format!("{}%", count * 100 / total))
         .build(&mut stdout);
     for i in 0..=50 {
         if let Some(event::Event::Resize(new_cols, _)) = poll_event() {
-            bar.resize(new_cols.into());
+            progress_bar.resize(new_cols.into());
         }
-        bar.update(i);
+        progress_bar.update(i);
         thread::sleep(Duration::from_millis(100));
     }
     crossterm::execute!(stdout, Show).unwrap();
@@ -39,6 +39,7 @@ fn poll_event() -> Option<event::Event> {
     None
 }
 
+#[derive(Default)]
 pub struct BarBuilder<F>
 where
     F: FnMut(u64, u64) -> String,
@@ -126,12 +127,12 @@ where
             self.width = width;
         }
         self.count = count;
-        let bar = self.bar();
+        let output = self.bar();
         queue!(
             self.target,
             MoveToColumn(1),
             Clear(ClearType::CurrentLine),
-            Print(bar),
+            Print(output),
         )
         .unwrap();
         self.target.flush().unwrap();
@@ -161,7 +162,11 @@ where
         if percent_width != bar_width {
             res.extend(iter::repeat(' ').take((bar_width - percent_width) as usize));
         }
-        let end = format!("] {}", (self.status_fmt)(self.count, self.total));
+        let end = format!(
+            "] {0:.1$}",
+            (self.status_fmt)(self.count, self.total),
+            self.status_width as usize,
+        );
         res.push_str(&end);
         res
     }
