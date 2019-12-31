@@ -1,8 +1,4 @@
-use std::{
-    io::self,
-    thread,
-    time::Duration,
-};
+use std::{io, thread, time::Duration};
 
 fn main() {
     let mut stdout = io::stdout();
